@@ -73,7 +73,7 @@
       <div class="notes-grid">
         <p><b>FLOPs convention</b> One multiply and one add count as 2 FLOPs. Projection and attention matrix products are counted; softmax, RoPE, normalization, gating and elementwise work are excluded unless explicitly stated.</p>
         <p><b>Memory convention</b> Weight and logical tensor sizes are exact from declared shapes and dtype. KV cache assumes each layer stores compressed KV latent plus shared RoPE key. Logical intermediates are a selected-tensor sum, not peak memory. Attention score/probability matrices are logical shapes; fused implementations such as FlashAttention need not materialize them.</p>
-        <p><b>Decode convention</b> Query length is 1. Sequence length is interpreted as the existing KV cache length. Prefill uses query and key lengths equal to sequence length.</p>
+        <p><b>Decode convention</b> Query length is 1. Sequence length is interpreted as the existing KV cache length. Decode uses the absorbed latent path: Q is projected into KV latent space, attention reads the compressed cache, and latent context is projected through V_up. The current token separately produces its new cache entry.</p>
       </div>
     </section>
     <footer>Tensor & Computation Explorer · Architecture IR prototype · No execution or hardware profiling</footer>
