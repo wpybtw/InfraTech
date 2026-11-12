@@ -15,16 +15,20 @@ export function buildMLAGraph(config){
   tensor("wq_up","Wq_up","weight",[Rq,Nh*(Dn+Dr)],dtype),
   tensor("q","Query","activation",[B,Sq,Nh,Dn+Dr],dtype,"Split into Q_nope and Q_rope"),
   tensor("wkv_down","Wkv_down","weight",[H,Rkv+Dr],dtype,"Joint KV latent and shared RoPE key projection"),
-  tensor("ckv","Compressed KV latent","cache",[B,Sk,Rkv],dtype,"Persistent compressed KV cache"),
-  tensor("krope","K_rope cache","cache",[B,Sk,Dr],dtype,"Shared RoPE key cache")
+  tensor("ckv","Compressed KV latent cache","cache",[B,Sk,Rkv],dtype,"KV cache after appending the current token"),
+  tensor("krope","K_rope cache","cache",[B,Sk,Dr],dtype,"Shared RoPE key cache after appending the current token")
  ];
  const operations=[
   op("q_down","Q down projection","Cq = X · Wq_down",["x","wq_down"],["cq"],costs.components.qDown),
   op("q_up","Q up projection","Q = Cq · Wq_up",["cq","wq_up"],["q"],costs.components.qUp),
-  op("kv_down","Joint KV down projection","[Ckv, K_rope] = X · Wkv_down",["x","wkv_down"],["ckv","krope"],costs.components.kvDown)
+  op("kv_down","Joint KV down projection","[Ckv_new, K_rope_new] = X · Wkv_down",["x","wkv_down"],["ckv_new","krope_new"],costs.components.kvDown)
  ];
  if(phase==="decode"){
   tensors.push(
+   tensor("ckv_cache","Previous KV latent cache","cache",[B,Math.max(0,Sk-1),Rkv],dtype,"Cache before appending the current token"),
+   tensor("krope_cache","Previous RoPE key cache","cache",[B,Math.max(0,Sk-1),Dr],dtype),
+   tensor("ckv_new","New KV latent","intermediate",[B,1,Rkv],dtype,"Compressed KV for the current token"),
+   tensor("krope_new","New RoPE key","intermediate",[B,1,Dr],dtype,"RoPE key for the current token"),
    tensor("wk_up","Wk_up","weight",[Rkv,Nh*Dn],dtype),
    tensor("q_latent","Latent-space query","intermediate",[B,Sq,Nh,Rkv],dtype,"Q_nope projected into latent space; absorbed K up-projection"),
    tensor("scores","Attention scores","intermediate",[B,Nh,Sq,Sk],dtype),
@@ -36,6 +40,7 @@ export function buildMLAGraph(config){
    tensor("y","Attention output projection","activation",[B,Sq,H],dtype)
   );
   operations.push(
+   op("cache_append","Append KV cache","Ckv = concat(Ckv_cache, Ckv_new); K_rope = concat(K_rope_cache, K_rope_new)",["ckv_cache","ckv_new","krope_cache","krope_new"],["ckv","krope"],0,"Logical cache update; data movement is not included in FLOPs."),
    op("q_absorb","Absorb K up-projection","Q_latent = Q_nope · Wk_upᵀ",["q","wk_up"],["q_latent"],costs.components.qAbsorb,"Per-head projection into compressed KV latent space."),
    op("qk","Latent + RoPE attention","Scores = Q_latent·Ckvᵀ + Q_rope·K_ropeᵀ",["q_latent","ckv","q","krope"],["scores"],costs.components.qkLatent+costs.components.qkRope),
    op("softmax","Scale + Softmax","P = softmax(Scores / √(Dn + Dr))",["scores"],["probs"],0,"Excluded from headline FLOPs."),
