@@ -27,6 +27,9 @@ test("MLA decode uses absorbed latent attention path",()=>{
  const g=buildMLAGraph({...DEFAULT_CONFIG,phase:"decode",sequence:8192});
  assert.equal(g.queryLength,1);assert.equal(g.keyLength,8192);
  assert.deepEqual(g.tensors.find(t=>t.id==="scores").resolvedShape,[1,32,1,8192]);
+ assert.ok(g.operations.some(o=>o.id==="cache_append"));
+ assert.deepEqual(g.tensors.find(t=>t.id==="ckv_cache").resolvedShape,[1,8191,512]);
+ assert.deepEqual(g.tensors.find(t=>t.id==="ckv_new").resolvedShape,[1,1,512]);
  assert.ok(g.operations.some(o=>o.id==="q_absorb"));
  assert.ok(g.operations.some(o=>o.id==="v_absorb"));
  assert.ok(!g.operations.some(o=>o.id==="k_up"));
