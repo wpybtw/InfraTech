@@ -29,7 +29,7 @@ function renderFlow() {
   const items = phase === "decode" ? [
     ["CURRENT TOKEN", [{kind:"tensor",id:"x"}]],
     ["QUERY PROJECTION", [{kind:"tensor",id:"wq_down"},{kind:"operation",id:"q_down"},{kind:"tensor",id:"cq"},{kind:"tensor",id:"wq_up"},{kind:"operation",id:"q_up"},{kind:"tensor",id:"q"}]],
-    ["APPEND COMPRESSED KV CACHE", [{kind:"tensor",id:"wkv_down"},{kind:"operation",id:"kv_down"},{kind:"tensor",id:"ckv"},{kind:"tensor",id:"krope"}]],
+    ["APPEND COMPRESSED KV CACHE", [{kind:"tensor",id:"wkv_down"},{kind:"operation",id:"kv_down"},{kind:"tensor",id:"ckv_new"},{kind:"tensor",id:"krope_new"},{kind:"operation",id:"cache_append"},{kind:"tensor",id:"ckv"},{kind:"tensor",id:"krope"}]],
     ["ABSORBED LATENT ATTENTION", [{kind:"tensor",id:"wk_up"},{kind:"operation",id:"q_absorb"},{kind:"tensor",id:"q_latent"},{kind:"operation",id:"qk"},{kind:"tensor",id:"scores"},{kind:"operation",id:"softmax"},{kind:"tensor",id:"probs"},{kind:"operation",id:"pv"},{kind:"tensor",id:"latent_context"}]],
     ["ABSORBED VALUE PROJECTION", [{kind:"tensor",id:"wv_up"},{kind:"operation",id:"v_absorb"},{kind:"tensor",id:"context"},{kind:"tensor",id:"wo"},{kind:"operation",id:"out"},{kind:"tensor",id:"y"}]],
   ] : [
