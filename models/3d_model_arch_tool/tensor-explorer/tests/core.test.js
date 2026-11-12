@@ -33,7 +33,7 @@ test("MLA decode uses absorbed latent attention path",()=>{
  assert.deepEqual(g.tensors.find(t=>t.id==="ckv_cache").resolvedShape,[1,8191,512]);
  assert.deepEqual(g.tensors.find(t=>t.id==="ckv_new").resolvedShape,[1,1,512]);
  assert.ok(g.operations.some(o=>o.id==="q_absorb"));
- assert.ok(g.operations.some(o=>o.id==="q_rope"));
+ assert.ok(g.operations.some(o=>o.id==="q_rope_apply"));
  assert.ok(g.operations.some(o=>o.id==="k_rope"));
  assert.ok(g.operations.some(o=>o.id==="v_absorb"));
  assert.ok(!g.operations.some(o=>o.id==="k_up"));
