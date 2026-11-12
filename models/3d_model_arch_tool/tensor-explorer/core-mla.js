@@ -27,9 +27,9 @@ export function buildMLAGraph(config){
   op("q_up","Q up projection","Q_raw = Cq · Wq_up",["cq","wq_up"],["q_raw"],costs.components.qUp),
   op("q_split","Split Q_nope / Q_rope","Q_raw → (Q_nope, Q_rope)",["q_raw"],["q_nope","q_rope"],0,"View/reshape split; no arithmetic FLOPs."),
   op("q_rope_apply","Apply RoPE to Q_rope","Q_rope_rot = RoPE(Q_rope, positions)",["q_rope"],["q_rope_rot"],0,"Only the rotary subspace is position-rotated; elementwise/trigonometric work excluded from FLOPs."),
-  op("kv_down","Joint KV down projection","[Ckv_new, K_rope_new] = X · Wkv_down",["x","wkv_down"],["ckv_new","krope_new"],costs.components.kvDown)
  ];
  if(phase==="decode"){
+  operations.push(op("kv_down","Joint KV down projection","[Ckv_new, K_rope_raw] = X · Wkv_down",["x","wkv_down"],["ckv_new","krope_new_raw"],costs.components.kvDown));
   tensors.push(
    tensor("ckv_cache","Previous KV latent cache","cache",[B,Math.max(0,Sk-1),Rkv],dtype,"Cache before appending the current token"),
    tensor("krope_cache","Previous RoPE key cache","cache",[B,Math.max(0,Sk-1),Dr],dtype),
@@ -57,6 +57,10 @@ export function buildMLAGraph(config){
    op("out","Output projection","Y = Context · Wo",["context","wo"],["y"],costs.components.out)
   );
  }else{
+  operations.push(
+   op("kv_down","Joint KV down projection","[Ckv, K_rope_raw] = X · Wkv_down",["x","wkv_down"],["ckv","krope_raw"],costs.components.kvDown),
+   op("k_rope_apply","Apply RoPE to K_rope","K_rope = RoPE(K_rope_raw, positions)",["krope_raw"],["krope"],0,"Shared rotary key component; elementwise/trigonometric work excluded from FLOPs.")
+  );
   tensors.push(
    tensor("wk_up","Wk_up","weight",[Rkv,Nh*Dn],dtype),
    tensor("knope","K_nope","intermediate",[B,Sk,Nh,Dn],dtype,"Explicit prefill K materialization"),
