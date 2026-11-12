@@ -13,16 +13,20 @@ export function buildMLAGraph(config){
   tensor("wq_down","Wq_down","weight",[H,Rq],dtype,"Q low-rank down projection"),
   tensor("cq","Q latent","intermediate",[B,Sq,Rq],dtype),
   tensor("wq_up","Wq_up","weight",[Rq,Nh*(Dn+Dr)],dtype),
-  tensor("q","Query before RoPE","intermediate",[B,Sq,Nh,Dn+Dr],dtype,"Split into Q_nope and Q_rope components"),
-  tensor("q_rot","Query after RoPE","activation",[B,Sq,Nh,Dn+Dr],dtype),
+  tensor("q_raw","Projected query","intermediate",[B,Sq,Nh,Dn+Dr],dtype),
+  tensor("q_nope","Q_nope","intermediate",[B,Sq,Nh,Dn],dtype),
+  tensor("q_rope","Q_rope before rotation","intermediate",[B,Sq,Nh,Dr],dtype),
+  tensor("q_rope_rot","Rotated Q_rope","activation",[B,Sq,Nh,Dr],dtype),
   tensor("wkv_down","Wkv_down","weight",[H,Rkv+Dr],dtype,"Joint KV latent and shared RoPE key projection"),
   tensor("ckv","Compressed KV latent cache","cache",[B,Sk,Rkv],dtype,"KV cache after appending the current token"),
-  tensor("krope","Rotated K_rope cache","cache",[B,Sk,Dr],dtype,"Shared RoPE key cache after appending the current token")
+  tensor("krope_raw","K_rope before rotation","intermediate",[B,Sk,Dr],dtype),
+  tensor("krope","Rotated K_rope cache","cache",[B,Sk,Dr],dtype,"Shared RoPE key cache after positional rotation")
  ];
  const operations=[
   op("q_down","Q down projection","Cq = X · Wq_down",["x","wq_down"],["cq"],costs.components.qDown),
-  op("q_up","Q up projection","Q = Cq · Wq_up",["cq","wq_up"],["q"],costs.components.qUp),
-  op("q_rope","Apply RoPE to Q_rope","Q_rope = RoPE(Q_rope, positions)",["q"],["q_rot"],0,"Only the rotary subspace is position-rotated; elementwise/trigonometric work excluded from FLOPs."),
+  op("q_up","Q up projection","Q_raw = Cq · Wq_up",["cq","wq_up"],["q_raw"],costs.components.qUp),
+  op("q_split","Split Q_nope / Q_rope","Q_raw → (Q_nope, Q_rope)",["q_raw"],["q_nope","q_rope"],0,"View/reshape split; no arithmetic FLOPs."),
+  op("q_rope_apply","Apply RoPE to Q_rope","Q_rope_rot = RoPE(Q_rope, positions)",["q_rope"],["q_rope_rot"],0,"Only the rotary subspace is position-rotated; elementwise/trigonometric work excluded from FLOPs."),
   op("kv_down","Joint KV down projection","[Ckv_new, K_rope_new] = X · Wkv_down",["x","wkv_down"],["ckv_new","krope_new"],costs.components.kvDown)
  ];
  if(phase==="decode"){
@@ -45,8 +49,8 @@ export function buildMLAGraph(config){
   operations.push(
    op("k_rope","Apply RoPE to new K","K_rope_new = RoPE(K_rope_raw, position)",["krope_new_raw"],["krope_new"],0,"Rotary embedding on the shared positional key subspace."),
    op("cache_append","Append KV cache","Ckv = concat(Ckv_cache, Ckv_new); K_rope = concat(K_rope_cache, K_rope_new)",["ckv_cache","ckv_new","krope_cache","krope_new"],["ckv","krope"],0,"Logical cache update; data movement is not included in FLOPs."),
-   op("q_absorb","Absorb K up-projection","Q_latent = Q_nope · Wk_upᵀ",["q","wk_up"],["q_latent"],costs.components.qAbsorb,"Per-head projection into compressed KV latent space."),
-   op("qk","Latent + RoPE attention","Scores = Q_latent·Ckvᵀ + Q_rope·K_ropeᵀ",["q_latent","ckv","q_rot","krope"],["scores"],costs.components.qkLatent+costs.components.qkRope),
+   op("q_absorb","Absorb K up-projection","Q_latent = Q_nope · Wk_upᵀ",["q_nope","wk_up"],["q_latent"],costs.components.qAbsorb,"Per-head projection into compressed KV latent space."),
+   op("qk","Latent + RoPE attention","Scores = Q_latent·Ckvᵀ + Q_rope·K_ropeᵀ",["q_latent","ckv","q_rope_rot","krope"],["scores"],costs.components.qkLatent+costs.components.qkRope),
    op("softmax","Scale + Softmax","P = softmax(Scores / √(Dn + Dr))",["scores"],["probs"],0,"Excluded from headline FLOPs."),
    op("pv","Attention over latent cache","Z = P · Ckv",["probs","ckv"],["latent_context"],costs.components.pvLatent),
    op("v_absorb","Absorb V up-projection","Context = Z · Wv_up",["latent_context","wv_up"],["context"],costs.components.vAbsorb,"Projects per-head latent contexts back to value dimensions."),
@@ -67,7 +71,7 @@ export function buildMLAGraph(config){
   operations.push(
    op("k_up","K up projection","K_nope = Ckv · Wk_up",["ckv","wk_up"],["knope"],costs.components.kUp),
    op("v_up","V up projection","V = Ckv · Wv_up",["ckv","wv_up"],["v"],costs.components.vUp),
-   op("qk","QKᵀ","Scores = Q_nope·K_nopeᵀ + Q_rope·K_ropeᵀ",["q_rot","knope","krope"],["scores"],costs.components.qkNope+costs.components.qkRope),
+   op("qk","QKᵀ","Scores = Q_nope·K_nopeᵀ + Q_rope·K_ropeᵀ",["q_nope","knope","q_rope_rot","krope"],["scores"],costs.components.qkNope+costs.components.qkRope),
    op("softmax","Scale + Softmax","P = softmax(Scores / √(Dn + Dr))",["scores"],["probs"],0,"Excluded from headline FLOPs."),
    op("pv","Probability × V","Context = P · V",["probs","v"],["context"],costs.components.pv),
    op("out","Output projection","Y = Context · Wo",["context","wo"],["y"],costs.components.out)
