@@ -31,9 +31,9 @@ npm test
 - Weight and logical tensor memory are computed from declared shapes and dtype.
 - KV cache estimate assumes per layer storage of compressed KV latent plus shared RoPE key.
 - Prefill uses Q length = KV length = sequence length.
-- Decode uses Q length = 1 and KV length = configured sequence length.
+- Decode uses Q length = 1; configured sequence length is the total attended KV length after appending the current token, so the prior cache length is S−1.
 - Softmax, RoPE, normalization and other elementwise costs are excluded from headline FLOPs.
-- The graph shows the explicit K/V materialization path. Absorbed MLA decode variants are noted but are not yet represented as a separate graph.
+- Prefill shows explicit K/V expansion. Decode shows the absorbed latent path, including the current-token KV append and latent-space attention.
 
 ## Important limitations
 
