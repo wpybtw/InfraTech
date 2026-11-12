@@ -21,8 +21,8 @@ test("MLA prefill builds explicit K/V expansion path",()=>{
  assert.deepEqual(g.tensors.find(t=>t.id==="krope").resolvedShape,[1,4096,64]);
  assert.deepEqual(g.tensors.find(t=>t.id==="scores").resolvedShape,[1,32,4096,4096]);
  assert.ok(g.operations.some(o=>o.id==="k_up"));
- assert.ok(g.operations.some(o=>o.id==="q_rope"));
- assert.ok(g.operations.some(o=>o.id==="k_rope"));
+ assert.ok(g.operations.some(o=>o.id==="q_rope_apply"));
+ assert.ok(g.operations.some(o=>o.id==="k_rope_apply"));
  assert.ok(g.operations.some(o=>o.id==="v_up"));
 });
 test("MLA decode uses absorbed latent attention path",()=>{
