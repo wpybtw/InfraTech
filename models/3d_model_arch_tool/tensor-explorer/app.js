@@ -61,7 +61,7 @@ function renderInspector() {
   if (!selected) { $("inspector").innerHTML = '<div class="empty-state">Select a tensor or operation in the computation flow.</div>'; return; }
   if (selected.kind === "tensor") {
     const t = graph.tensors.find(x => x.id === selected.id);
-    const d = describeTensor(t,graph);
+    const d = describeTensor(t);
     const bytes = t.dtype === "fp8" ? 1 : t.dtype === "fp32" ? 4 : 2;
     const isWeight = t.kind === "weight";
     $("inspector").innerHTML = `
@@ -91,6 +91,7 @@ function renderMetrics() {
   $("metric-attn").textContent = formatCount(c.attention);
   $("metric-weight").textContent = formatBytes(c.weightBytes);
   $("metric-cache").textContent = formatBytes(c.totalCacheBytes);
+  $("metric-activation").textContent = formatBytes(c.logicalIntermediateBytes);
   $("metric-cache-note").textContent = `${c.cacheBytesPerToken.toLocaleString("en-US")} B / token across ${graph.config.layers} layers`;
 }
 function rebuild() {
