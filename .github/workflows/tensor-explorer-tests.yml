@@ -1,0 +1,25 @@
+name: Tensor Explorer Tests
+
+on:
+  push:
+    branches:
+      - feat/tensor-computation-explorer
+    paths:
+      - "models/3d_model_arch_tool/tensor-explorer/**"
+      - ".github/workflows/tensor-explorer-tests.yml"
+  pull_request:
+    paths:
+      - "models/3d_model_arch_tool/tensor-explorer/**"
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: models/3d_model_arch_tool/tensor-explorer
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - run: npm test
