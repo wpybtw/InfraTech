@@ -39,7 +39,7 @@
           <label>QK NoPE dim <input id="nope" type="number" min="1" value="128"></label>
           <label>QK RoPE dim <input id="rope" type="number" min="1" value="64"></label>
           <label>V head dim <input id="vdim" type="number" min="1" value="128"></label>
-          <label>Transformer layers <input id="layers" type="number" min="1" value="ಿಗೆ  32"></label>
+          <label>Transformer layers <input id="layers" type="number" min="1" value="32"></label>
         </div>
         <label class="select-label">Storage dtype
           <select id="dtype"><option value="bf16">BF16 (2 B)</option><option value="fp16">FP16 (2 B)</option><option value="fp8">FP8 (1 B)</option><option value="fp32">FP32 (4 B)</option></select>
@@ -66,6 +66,7 @@
       <div class="metric panel"><span class="metric-label">ATTENTION FLOPs</span><strong id="metric-attn">—</strong><small>QKᵀ + PV, excluding softmax</small></div>
       <div class="metric panel"><span class="metric-label">WEIGHT MEMORY</span><strong id="metric-weight">—</strong><small>One layer, selected dtype</small></div>
       <div class="metric panel"><span class="metric-label">KV CACHE</span><strong id="metric-cache">—</strong><small id="metric-cache-note">All layers, selected batch and length</small></div>
+      <div class="metric panel"><span class="metric-label">LOGICAL INTERMEDIATES</span><strong id="metric-activation">—</strong><small>Selected explicit-path tensors · not peak memory</small></div>
     </section>
     <section class="assumptions panel">
       <div class="panel-heading"><span>ESTIMATION NOTES</span><span class="muted">MODEL, NOT PROFILE</span></div>
