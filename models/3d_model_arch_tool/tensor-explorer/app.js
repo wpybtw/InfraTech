@@ -28,14 +28,14 @@ function renderFlow() {
   const o = Object.fromEntries(graph.operations.map(x => [x.id,x]));
   const items = phase === "decode" ? [
     ["CURRENT TOKEN", [{kind:"tensor",id:"x"}]],
-    ["QUERY PROJECTION", [{kind:"tensor",id:"wq_down"},{kind:"operation",id:"q_down"},{kind:"tensor",id:"cq"},{kind:"tensor",id:"wq_up"},{kind:"operation",id:"q_up"},{kind:"tensor",id:"q"},{kind:"operation",id:"q_rope"},{kind:"tensor",id:"q_rot"}]],
+    ["QUERY PROJECTION", [{kind:"tensor",id:"wq_down"},{kind:"operation",id:"q_down"},{kind:"tensor",id:"cq"},{kind:"tensor",id:"wq_up"},{kind:"operation",id:"q_up"},{kind:"tensor",id:"q_raw"},{kind:"operation",id:"q_split"},{kind:"tensor",id:"q_nope"},{kind:"tensor",id:"q_rope"},{kind:"operation",id:"q_rope_apply"},{kind:"tensor",id:"q_rope_rot"}]],
     ["APPEND COMPRESSED KV CACHE", [{kind:"tensor",id:"wkv_down"},{kind:"operation",id:"kv_down"},{kind:"tensor",id:"ckv_new"},{kind:"tensor",id:"krope_new_raw"},{kind:"operation",id:"k_rope"},{kind:"tensor",id:"krope_new"},{kind:"operation",id:"cache_append"},{kind:"tensor",id:"ckv"},{kind:"tensor",id:"krope"}]],
     ["ABSORBED LATENT ATTENTION", [{kind:"tensor",id:"wk_up"},{kind:"operation",id:"q_absorb"},{kind:"tensor",id:"q_latent"},{kind:"operation",id:"qk"},{kind:"tensor",id:"scores"},{kind:"operation",id:"softmax"},{kind:"tensor",id:"probs"},{kind:"operation",id:"pv"},{kind:"tensor",id:"latent_context"}]],
     ["ABSORBED VALUE PROJECTION", [{kind:"tensor",id:"wv_up"},{kind:"operation",id:"v_absorb"},{kind:"tensor",id:"context"},{kind:"tensor",id:"wo"},{kind:"operation",id:"out"},{kind:"tensor",id:"y"}]],
   ] : [
     ["INPUT", [{kind:"tensor",id:"x"}]],
     ["Q PROJECTION", [{kind:"tensor",id:"wq_down"},{kind:"operation",id:"q_down"},{kind:"tensor",id:"cq"},{kind:"tensor",id:"wq_up"},{kind:"operation",id:"q_up"},{kind:"tensor",id:"q"}]],
-    ["KV COMPRESSION", [{kind:"tensor",id:"wkv_down"},{kind:"operation",id:"kv_down"},{kind:"tensor",id:"ckv"},{kind:"tensor",id:"krope"}]],
+    ["KV COMPRESSION", [{kind:"tensor",id:"wkv_down"},{kind:"operation",id:"kv_down"},{kind:"tensor",id:"ckv"},{kind:"tensor",id:"krope_raw"},{kind:"operation",id:"k_rope_apply"},{kind:"tensor",id:"krope"}]],
     ["LATENT EXPANSION · EXPLICIT PATH", [{kind:"tensor",id:"wk_up"},{kind:"operation",id:"k_up"},{kind:"tensor",id:"knope"},{kind:"tensor",id:"wv_up"},{kind:"operation",id:"v_up"},{kind:"tensor",id:"v"}]],
     ["ATTENTION", [{kind:"operation",id:"qk"},{kind:"tensor",id:"scores"},{kind:"operation",id:"softmax"},{kind:"tensor",id:"probs"},{kind:"operation",id:"pv"},{kind:"tensor",id:"context"}]],
     ["OUTPUT", [{kind:"tensor",id:"wo"},{kind:"operation",id:"out"},{kind:"tensor",id:"y"}]],
