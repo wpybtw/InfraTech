@@ -1,0 +1,82 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="theme-color" content="#10151d">
+  <meta name="description" content="LLM tensor and computation explorer — inspect MLA tensor shapes, operations, FLOPs and memory estimates.">
+  <title>Tensor & Computation Explorer — MLA</title>
+  <link rel="stylesheet" href="./style.css">
+</head>
+<body>
+  <header class="topbar">
+    <a class="brand" href="../">InfraTech <span>/</span> Tensor Explorer</a>
+    <div class="top-meta"><span class="status-dot"></span> COMPUTATION IR <span class="version">MVP 0.1</span></div>
+  </header>
+  <main>
+    <section class="intro">
+      <div>
+        <p class="eyebrow">MODEL COMPUTATION EXPLORER</p>
+        <h1>Multi-head Latent Attention</h1>
+        <p class="subtitle">Follow the tensors. Inspect the operations. Understand the cost.</p>
+      </div>
+      <div class="mode-switch" role="group" aria-label="Execution phase">
+        <button data-phase="prefill" class="active">Prefill</button>
+        <button data-phase="decode">Decode</button>
+      </div>
+    </section>
+
+    <section class="workspace">
+      <aside class="config-panel panel">
+        <div class="panel-heading"><span>MODEL CONFIG</span><span class="muted">01</span></div>
+        <div class="field-grid">
+          <label>Batch size <input id="batch" type="number" min="1" max="256" value="1"></label>
+          <label>Sequence length <input id="seq" type="number" min="1" max="1048576" value="4096"></label>
+          <label>Hidden size <input id="hidden" type="number" min="1" value="4096"></label>
+          <label>Attention heads <input id="heads" type="number" min="1" value="32"></label>
+          <label>Q latent rank <input id="qrank" type="number" min="1" value="1536"></label>
+          <label>KV latent rank <input id="kvrank" type="number" min="1" value="512"></label>
+          <label>QK NoPE dim <input id="nope" type="number" min="1" value="128"></label>
+          <label>QK RoPE dim <input id="rope" type="number" min="1" value="64"></label>
+          <label>V head dim <input id="vdim" type="number" min="1" value="128"></label>
+          <label>Transformer layers <input id="layers" type="number" min="1" value="ಿಗೆ  32"></label>
+        </div>
+        <label class="select-label">Storage dtype
+          <select id="dtype"><option value="bf16">BF16 (2 B)</option><option value="fp16">FP16 (2 B)</option><option value="fp8">FP8 (1 B)</option><option value="fp32">FP32 (4 B)</option></select>
+        </label>
+        <div class="config-note">Dimensions are model-level assumptions for this template. Weight shapes below use mathematical matrix orientation, not framework-specific storage orientation.</div>
+        <button id="reset" class="reset-button">Reset defaults</button>
+      </aside>
+
+      <section class="flow-panel panel">
+        <div class="panel-heading"><span>COMPUTATION FLOW</span><span id="flow-meta" class="muted">PREFILL · SEQ 4096</span></div>
+        <div class="flow-legend"><span><i class="dot activation"></i>Activation</span><span><i class="dot weight"></i>Weight</span><span><i class="dot operation"></i>Operation</span><span><i class="dot cache"></i>Cache</span></div>
+        <div id="flow" class="flow" aria-label="MLA computation flow"></div>
+        <div class="flow-footer"><span id="flow-count">—</span><span>SELECT A STEP TO INSPECT</span></div>
+      </section>
+
+      <aside class="inspector-panel panel">
+        <div class="panel-heading"><span>INSPECTOR</span><span class="muted">03</span></div>
+        <div id="inspector" class="inspector-content"><div class="empty-state">Select a tensor or operation in the computation flow.</div></div>
+      </aside>
+    </section>
+
+    <section class="metrics">
+      <div class="metric panel"><span class="metric-label">TOTAL PROJECTION FLOPs</span><strong id="metric-proj">—</strong><small>Q/K/V + output projections</small></div>
+      <div class="metric panel"><span class="metric-label">ATTENTION FLOPs</span><strong id="metric-attn">—</strong><small>QKᵀ + PV, excluding softmax</small></div>
+      <div class="metric panel"><span class="metric-label">WEIGHT MEMORY</span><strong id="metric-weight">—</strong><small>One layer, selected dtype</small></div>
+      <div class="metric panel"><span class="metric-label">KV CACHE</span><strong id="metric-cache">—</strong><small id="metric-cache-note">All layers, selected batch and length</small></div>
+    </section>
+    <section class="assumptions panel">
+      <div class="panel-heading"><span>ESTIMATION NOTES</span><span class="muted">MODEL, NOT PROFILE</span></div>
+      <div class="notes-grid">
+        <p><b>FLOPs convention</b> One multiply and one add count as 2 FLOPs. Projection and attention matrix products are counted; softmax, RoPE, normalization, gating and elementwise work are excluded unless explicitly stated.</p>
+        <p><b>Memory convention</b> Weight and logical tensor sizes are exact from declared shapes and dtype. KV cache assumes each layer stores the compressed KV latent and the shared RoPE key. It excludes allocator overhead, temporary workspaces and implementation-specific padding.</p>
+        <p><b>Decode convention</b> Query length is 1. Sequence length is interpreted as the existing KV cache length. Prefill uses query and key lengths equal to sequence length.</p>
+      </div>
+    </section>
+    <footer>Tensor & Computation Explorer · Architecture IR prototype · No execution or hardware profiling</footer>
+  </main>
+  <script type="module" src="./app.js"></script>
+</body>
+</html>
